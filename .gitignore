@@ -1,0 +1,48 @@
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.claude/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Build artifacts
+./build/
+./dist/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Go
+go/bin/
+go/coverage.out
+go/coverage.html
+*.test
+
+# Temporary files
+*.tmp
+*.log
+.env
+.env.local
+
+# Node (future)
+node_modules/
+*.tgz
+
+# Python (future)
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+
+# Package manager locks (keep these in source control)
+# go.sum - keep
+# package-lock.json - keep
+# requirements.txt - keep
