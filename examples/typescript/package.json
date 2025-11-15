@@ -1,0 +1,26 @@
+{
+  "name": "box-example-typescript",
+  "version": "1.0.0",
+  "description": "Example Box application in TypeScript",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "dev:watch": "nodemon --exec ts-node src/index.ts"
+  },
+  "dependencies": {
+    "@gravelight-studio/box": "file:../../typescript",
+    "pg": "^8.11.3",
+    "pino": "^8.17.2",
+    "pino-pretty": "^10.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "@types/pg": "^8.10.9",
+    "nodemon": "^3.0.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}
+

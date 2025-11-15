@@ -1,133 +1,135 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
-# Box CLI Installer
+# Box CLI Installation Script
 # Usage: curl -sSL https://raw.githubusercontent.com/gravelight-studio/box/main/install.sh | sh
 
-# Configuration
+VERSION="${BOX_VERSION:-latest}"
+INSTALL_DIR="${BOX_INSTALL_DIR:-/usr/local/bin}"
 REPO="gravelight-studio/box"
-INSTALL_DIR="${INSTALL_DIR:-$HOME/.local/bin}"
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+echo "🎯 Box CLI Installer"
+echo ""
 
 # Helper functions
 info() {
-    printf "${GREEN}==>${NC} %s\n" "$1"
+    echo "✓ $1"
 }
 
 warn() {
-    printf "${YELLOW}Warning:${NC} %s\n" "$1"
+    echo "⚠️  $1"
 }
 
 error() {
-    printf "${RED}Error:${NC} %s\n" "$1" >&2
+    echo "❌ $1" >&2
     exit 1
 }
 
-# Detect OS
-detect_os() {
-    case "$(uname -s)" in
-        Linux*)     echo "linux";;
-        Darwin*)    echo "darwin";;
-        MINGW*|MSYS*|CYGWIN*) echo "windows";;
-        *)          error "Unsupported operating system: $(uname -s)";;
-    esac
-}
+# Detect OS and architecture
+OS="$(uname -s)"
+ARCH="$(uname -m)"
 
-# Detect architecture
-detect_arch() {
-    case "$(uname -m)" in
-        x86_64|amd64)   echo "amd64";;
-        aarch64|arm64)  echo "arm64";;
-        *)              error "Unsupported architecture: $(uname -m)";;
-    esac
-}
+case "$OS" in
+  Linux*)
+    OS_TYPE="linux"
+    ;;
+  Darwin*)
+    OS_TYPE="darwin"
+    ;;
+  *)
+    error "Unsupported operating system: $OS"
+    ;;
+esac
 
-# Get latest release version
-get_latest_version() {
-    curl -sSL "https://api.github.com/repos/$REPO/releases/latest" \
-        | grep '"tag_name":' \
-        | sed -E 's/.*"([^"]+)".*/\1/' \
-        || error "Failed to fetch latest version"
-}
+case "$ARCH" in
+  x86_64)
+    ARCH_TYPE="amd64"
+    ;;
+  amd64)
+    ARCH_TYPE="amd64"
+    ;;
+  arm64)
+    ARCH_TYPE="arm64"
+    ;;
+  aarch64)
+    ARCH_TYPE="arm64"
+    ;;
+  *)
+    error "Unsupported architecture: $ARCH"
+    ;;
+esac
 
-# Download and install
-install_box() {
-    OS=$(detect_os)
-    ARCH=$(detect_arch)
-    VERSION="${VERSION:-$(get_latest_version)}"
+echo "📦 Detected platform: ${OS_TYPE}-${ARCH_TYPE}"
+echo ""
 
-    info "Installing Box CLI..."
-    info "  OS: $OS"
-    info "  Architecture: $ARCH"
-    info "  Version: $VERSION"
+# Get latest version if not specified
+if [ "$VERSION" = "latest" ]; then
+  echo "🔍 Fetching latest version..."
+  VERSION=$(curl -sSL "https://api.github.com/repos/${REPO}/releases/latest" | grep '"tag_name"' | sed -E 's/.*"v([^"]+)".*/\1/')
+  if [ -z "$VERSION" ]; then
+    error "Failed to fetch latest version"
+  fi
+fi
 
-    # Construct download URL and binary name
-    if [ "$OS" = "windows" ]; then
-        BINARY_NAME="box-${OS}-${ARCH}.exe"
-        ARCHIVE_NAME="box-${OS}-${ARCH}.zip"
-    else
-        BINARY_NAME="box-${OS}-${ARCH}"
-        ARCHIVE_NAME="box-${OS}-${ARCH}.tar.gz"
-    fi
+echo "📥 Downloading Box CLI v${VERSION}..."
+BINARY_NAME="box-${OS_TYPE}-${ARCH_TYPE}"
+DOWNLOAD_URL="https://github.com/${REPO}/releases/download/v${VERSION}/${BINARY_NAME}"
+CHECKSUM_URL="https://github.com/${REPO}/releases/download/v${VERSION}/${BINARY_NAME}.sha256"
 
-    DOWNLOAD_URL="https://github.com/$REPO/releases/download/$VERSION/$ARCHIVE_NAME"
+# Create temp directory
+TMP_DIR=$(mktemp -d)
+trap "rm -rf $TMP_DIR" EXIT
 
-    # Create temporary directory
-    TMP_DIR=$(mktemp -d)
-    trap "rm -rf $TMP_DIR" EXIT
+cd "$TMP_DIR"
 
-    info "Downloading from $DOWNLOAD_URL..."
+# Download binary
+if ! curl -sSL -o "$BINARY_NAME" "$DOWNLOAD_URL"; then
+  error "Failed to download binary from $DOWNLOAD_URL"
+fi
 
-    # Download
-    if ! curl -sSL -f "$DOWNLOAD_URL" -o "$TMP_DIR/$ARCHIVE_NAME"; then
-        error "Failed to download Box CLI. Please check that version $VERSION exists."
-    fi
+# Download and verify checksum
+if ! curl -sSL -o "${BINARY_NAME}.sha256" "$CHECKSUM_URL"; then
+  warn "Failed to download checksum, skipping verification"
+else
+  echo "🔐 Verifying checksum..."
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum -c "${BINARY_NAME}.sha256" || error "Checksum verification failed"
+  elif command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 -c "${BINARY_NAME}.sha256" || error "Checksum verification failed"
+  else
+    warn "No checksum tool found, skipping verification"
+  fi
+fi
 
-    # Extract
-    info "Extracting..."
-    cd "$TMP_DIR"
-    if [ "$OS" = "windows" ]; then
-        unzip -q "$ARCHIVE_NAME" || error "Failed to extract archive"
-    else
-        tar xzf "$ARCHIVE_NAME" || error "Failed to extract archive"
-    fi
+# Make executable
+chmod +x "$BINARY_NAME"
 
-    # Create install directory if it doesn't exist
-    mkdir -p "$INSTALL_DIR"
+# Install binary
+echo "📦 Installing to ${INSTALL_DIR}/box..."
+if [ -w "$INSTALL_DIR" ]; then
+  mv "$BINARY_NAME" "${INSTALL_DIR}/box"
+else
+  echo "🔑 Requesting sudo access to install to ${INSTALL_DIR}..."
+  sudo mv "$BINARY_NAME" "${INSTALL_DIR}/box"
+fi
 
-    # Install binary
-    info "Installing to $INSTALL_DIR..."
-    if [ "$OS" = "windows" ]; then
-        mv "$BINARY_NAME" "$INSTALL_DIR/box.exe"
-        chmod +x "$INSTALL_DIR/box.exe"
-    else
-        mv "$BINARY_NAME" "$INSTALL_DIR/box"
-        chmod +x "$INSTALL_DIR/box"
-    fi
+# Verify installation
+echo ""
+info "Box CLI installed successfully!"
+echo ""
+echo "📍 Location: ${INSTALL_DIR}/box"
+echo "📦 Version: v${VERSION}"
+echo ""
 
-    # Check if install directory is in PATH
-    case ":$PATH:" in
-        *":$INSTALL_DIR:"*) ;;
-        *)
-            warn "$INSTALL_DIR is not in your PATH"
-            info "Add it to your PATH by adding this to your shell profile:"
-            info "  export PATH=\"\$PATH:$INSTALL_DIR\""
-            ;;
-    esac
-
-    info "✓ Box CLI installed successfully!"
-    info ""
-    info "Usage:"
-    info "  box --help"
-    info "  box --handlers ./handlers --project my-gcp-project"
-    info ""
-    info "Documentation: https://github.com/$REPO"
-}
-
-# Run installation
-install_box
+# Test the installation
+if "${INSTALL_DIR}/box" version >/dev/null 2>&1; then
+  info "Installation verified!"
+  echo ""
+  echo "Get started:"
+  echo "  box init my-app          # Create a new project"
+  echo "  box build --help         # Build deployment artifacts"
+  echo ""
+else
+  warn "Installation completed but verification failed"
+  echo "You may need to add ${INSTALL_DIR} to your PATH"
+fi

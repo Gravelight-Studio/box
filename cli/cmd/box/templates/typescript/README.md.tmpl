@@ -1,0 +1,95 @@
+# {{.ProjectName}}
+
+A Box serverless application built with TypeScript.
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18 or later
+- Box CLI
+
+### Installation
+
+```bash
+npm install
+```
+
+### Development
+
+Run locally:
+```bash
+npm run dev
+```
+
+With auto-reload:
+```bash
+npm run dev:watch
+```
+
+### Build Deployment Artifacts
+
+Generate deployment artifacts for GCP:
+
+```bash
+box build --project <your-gcp-project-id>
+```
+
+This will generate:
+- **Cloud Functions** in `./build/functions/`
+- **Cloud Run Containers** in `./build/containers/`
+- **API Gateway** configuration in `./build/gateway/`
+- **Terraform IaC** in `./build/terraform/`
+
+### Deploy
+
+```bash
+cd build/terraform
+terraform init
+terraform apply
+```
+
+## Project Structure
+
+```
+.
+├── handlers/          # HTTP handlers with @box: annotations
+├── src/
+│   └── index.ts      # Local development server
+├── package.json      # Node.js dependencies
+├── tsconfig.json     # TypeScript configuration
+└── README.md         # This file
+```
+
+## Adding Handlers
+
+Create handlers in the `handlers/` directory with Box annotations:
+
+```typescript
+import { Request, Response, HandlerFactory, Logger, Pool } from '@gravelight-studio/box';
+
+// @box:function
+// @box:path GET /api/users
+// @box:auth required
+export const getUsers: HandlerFactory = (db: Pool | null, logger: Logger) => {
+  return async (req: Request, res: Response) => {
+    // Your handler logic
+  };
+};
+```
+
+### Available Annotations
+
+- `@box:function` or `@box:container` - Deployment type
+- `@box:path METHOD /path` - HTTP route
+- `@box:auth none|optional|required` - Authentication
+- `@box:cors enabled|disabled` - CORS support
+- `@box:ratelimit N requests/second` - Rate limiting
+- `@box:timeout Ns` - Timeout duration
+- `@box:memory 256MB` - Memory allocation
+- `@box:service name` - Service grouping (for containers)
+
+## Learn More
+
+- [Box Documentation](https://github.com/gravelight-studio/box)
+- [TypeScript Documentation](https://www.typescriptlang.org/)

@@ -7,6 +7,9 @@
 .DS_Store
 .claude/
 
+# Planning/Notes
+TODO/
+
 # OS
 Thumbs.db
 .DS_Store
@@ -20,7 +23,7 @@ Thumbs.db
 *.dylib
 
 # Go
-go/bin/
+bin/
 go/coverage.out
 go/coverage.html
 *.test

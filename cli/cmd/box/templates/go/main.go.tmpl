@@ -1,0 +1,44 @@
+package main
+
+import (
+	"fmt"
+	"net/http"
+	"os"
+
+	"github.com/gravelight-studio/box/router"
+	"go.uber.org/zap"
+)
+
+func main() {
+	// Create logger
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to create logger: %v\n", err)
+		os.Exit(1)
+	}
+	defer logger.Sync()
+
+	// Create router
+	config := router.Config{
+		HandlersDir: "./handlers",
+		Logger:      logger,
+	}
+
+	r, err := router.NewRouter(config)
+	if err != nil {
+		logger.Fatal("Failed to create router", zap.Error(err))
+	}
+
+	// Start server
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	addr := fmt.Sprintf(":%s", port)
+	logger.Info("Starting server", zap.String("addr", addr))
+
+	if err := http.ListenAndServe(addr, r); err != nil {
+		logger.Fatal("Server failed", zap.Error(err))
+	}
+}

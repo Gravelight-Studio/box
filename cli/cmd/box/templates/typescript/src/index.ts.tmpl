@@ -1,0 +1,33 @@
+import { createRouter } from '@gravelight-studio/box';
+import pino from 'pino';
+
+const logger = pino({
+  transport: {
+    target: 'pino-pretty',
+    options: {
+      colorize: true,
+      ignore: 'pid,hostname'
+    }
+  }
+});
+
+async function main() {
+  try {
+    // Create router
+    const app = await createRouter({
+      handlersDir: './handlers',
+      logger
+    });
+
+    // Start server
+    const port = process.env.PORT || 8080;
+    app.listen(port, () => {
+      logger.info(`Server listening on port ${port}`);
+    });
+  } catch (error) {
+    logger.error('Failed to start server', { error });
+    process.exit(1);
+  }
+}
+
+main();

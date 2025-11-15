@@ -1,0 +1,270 @@
+name: Release Box CLI
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  version:
+    name: Determine Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+      should_release: ${{ steps.check_changes.outputs.should_release }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check for version changes
+        id: check_changes
+        run: |
+          # Check if version in main.go changed
+          if git diff HEAD^ HEAD -- cli/cmd/box/main.go | grep -q 'const version'; then
+            echo "should_release=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_release=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get version from main.go
+        id: get_version
+        run: |
+          VERSION=$(grep 'const version = ' cli/cmd/box/main.go | sed 's/const version = "\(.*\)"/\1/')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Detected version: $VERSION"
+
+  build:
+    name: Build CLI
+    needs: version
+    if: needs.version.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - os: linux
+            arch: amd64
+            goos: linux
+            goarch: amd64
+          - os: linux
+            arch: arm64
+            goos: linux
+            goarch: arm64
+          - os: darwin
+            arch: amd64
+            goos: darwin
+            goarch: amd64
+          - os: darwin
+            arch: arm64
+            goos: darwin
+            goarch: arm64
+          - os: windows
+            arch: amd64
+            goos: windows
+            goarch: amd64
+          - os: windows
+            arch: arm64
+            goos: windows
+            goarch: arm64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Install dependencies
+        working-directory: ./cli
+        run: go mod download
+
+      - name: Build binary
+        working-directory: ./cli
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          OUTPUT_NAME="box-${{ matrix.os }}-${{ matrix.arch }}"
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            OUTPUT_NAME="${OUTPUT_NAME}.exe"
+          fi
+          go build -ldflags="-s -w" -o "bin/${OUTPUT_NAME}" ./cmd/box
+
+          # Create checksum
+          cd bin
+          sha256sum "${OUTPUT_NAME}" > "${OUTPUT_NAME}.sha256"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: box-${{ matrix.os }}-${{ matrix.arch }}
+          path: |
+            cli/bin/box-${{ matrix.os }}-${{ matrix.arch }}*
+          retention-days: 1
+
+  release:
+    name: Create GitHub Release
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Prepare release files
+        run: |
+          mkdir -p release
+          find artifacts -type f -exec cp {} release/ \;
+          ls -lah release/
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          cat > release_notes.md << 'EOF'
+          # Box CLI v${{ needs.version.outputs.version }}
+
+          Universal command-line interface for the Box serverless framework.
+
+          ## Features
+
+          - 🚀 **Multi-language support**: Scaffold and build Go and TypeScript projects
+          - 📦 **Single binary**: No runtime dependencies required
+          - ⚡ **Fast**: Native Go performance
+          - 🎯 **Auto-detection**: Automatically detects project language
+          - 🔧 **GCP deployment**: Generate Cloud Functions, Cloud Run, API Gateway, and Terraform
+
+          ## Installation
+
+          ### Linux / macOS
+
+          ```bash
+          # Download the appropriate binary for your platform
+          # For Linux (AMD64):
+          curl -LO https://github.com/${{ github.repository }}/releases/download/v${{ needs.version.outputs.version }}/box-linux-amd64
+
+          # For macOS (ARM64 - M1/M2):
+          curl -LO https://github.com/${{ github.repository }}/releases/download/v${{ needs.version.outputs.version }}/box-darwin-arm64
+
+          # For macOS (AMD64 - Intel):
+          curl -LO https://github.com/${{ github.repository }}/releases/download/v${{ needs.version.outputs.version }}/box-darwin-amd64
+
+          # Make it executable
+          chmod +x box-*
+
+          # Move to PATH
+          sudo mv box-* /usr/local/bin/box
+
+          # Verify installation
+          box version
+          ```
+
+          ### Windows
+
+          ```powershell
+          # Download the appropriate binary for your platform
+          # For Windows (AMD64):
+          curl.exe -LO https://github.com/${{ github.repository }}/releases/download/v${{ needs.version.outputs.version }}/box-windows-amd64.exe
+
+          # Rename and move to a directory in your PATH
+          # Or add the current directory to PATH
+
+          # Verify installation
+          box.exe version
+          ```
+
+          ## Quick Start
+
+          ```bash
+          # Initialize a new project
+          box init my-app --lang go
+          box init my-api --lang typescript
+
+          # Build deployment artifacts
+          cd my-app
+          box build --project my-gcp-project-id
+
+          # Deploy with Terraform
+          cd build/terraform
+          terraform init && terraform apply
+          ```
+
+          ## Platform Support
+
+          | Platform | Architecture | Binary |
+          |----------|-------------|--------|
+          | Linux | AMD64 | `box-linux-amd64` |
+          | Linux | ARM64 | `box-linux-arm64` |
+          | macOS | AMD64 (Intel) | `box-darwin-amd64` |
+          | macOS | ARM64 (M1/M2) | `box-darwin-arm64` |
+          | Windows | AMD64 | `box-windows-amd64.exe` |
+          | Windows | ARM64 | `box-windows-arm64.exe` |
+
+          ## Verification
+
+          Each binary includes a SHA256 checksum file. Verify your download:
+
+          ```bash
+          # Linux / macOS
+          sha256sum -c box-linux-amd64.sha256
+
+          # Windows (PowerShell)
+          (Get-FileHash box-windows-amd64.exe).Hash -eq (Get-Content box-windows-amd64.exe.sha256).Split()[0]
+          ```
+
+          ## Documentation
+
+          - [CLI Documentation](https://github.com/${{ github.repository }}/tree/main/cli)
+          - [Go Library](https://github.com/${{ github.repository }}/tree/main/go)
+          - [TypeScript Library](https://github.com/${{ github.repository }}/tree/main/typescript)
+
+          ## What's Changed
+
+          See the [commit history](https://github.com/${{ github.repository }}/commits/main) for detailed changes.
+
+          ---
+
+          **Full Changelog**: https://github.com/${{ github.repository }}/compare/v${{ needs.version.outputs.version }}...main
+          EOF
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.version.outputs.version }}
+          name: Box CLI v${{ needs.version.outputs.version }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+          files: |
+            release/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify:
+    name: Notify Release
+    needs: [version, release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summary
+        run: |
+          echo "## 🎉 Release Published" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** v${{ needs.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Binaries:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Linux (AMD64, ARM64)" >> $GITHUB_STEP_SUMMARY
+          echo "- macOS (AMD64, ARM64)" >> $GITHUB_STEP_SUMMARY
+          echo "- Windows (AMD64, ARM64)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Release URL:** https://github.com/${{ github.repository }}/releases/tag/v${{ needs.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY

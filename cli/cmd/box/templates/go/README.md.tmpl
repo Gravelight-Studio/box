@@ -1,0 +1,85 @@
+# {{.ProjectName}}
+
+A Box serverless application built with Go.
+
+## Getting Started
+
+### Prerequisites
+
+- Go 1.21 or later
+- Box CLI
+
+### Installation
+
+```bash
+go mod tidy
+```
+
+### Development
+
+Run locally:
+```bash
+go run .
+```
+
+### Build Deployment Artifacts
+
+Generate deployment artifacts for GCP:
+
+```bash
+box build --project <your-gcp-project-id>
+```
+
+This will generate:
+- **Cloud Functions** in `./build/functions/`
+- **Cloud Run Containers** in `./build/containers/`
+- **API Gateway** configuration in `./build/gateway/`
+- **Terraform IaC** in `./build/terraform/`
+
+### Deploy
+
+```bash
+cd build/terraform
+terraform init
+terraform apply
+```
+
+## Project Structure
+
+```
+.
+├── handlers/          # HTTP handlers with @box: annotations
+├── go.mod            # Go module file
+└── README.md         # This file
+```
+
+## Adding Handlers
+
+Create handlers in the `handlers/` directory with Box annotations:
+
+```go
+// @box:function
+// @box:path GET /api/users
+// @box:auth required
+func GetUsers(db router.DB, logger *zap.Logger) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        // Your handler logic
+    }
+}
+```
+
+### Available Annotations
+
+- `@box:function` or `@box:container` - Deployment type
+- `@box:path METHOD /path` - HTTP route
+- `@box:auth none|optional|required` - Authentication
+- `@box:cors enabled|disabled` - CORS support
+- `@box:ratelimit N requests/second` - Rate limiting
+- `@box:timeout Ns` - Timeout duration
+- `@box:memory 256MB` - Memory allocation
+- `@box:service name` - Service grouping (for containers)
+
+## Learn More
+
+- [Box Documentation](https://github.com/gravelight-studio/box)
+- [Go Documentation](https://golang.org/doc/)

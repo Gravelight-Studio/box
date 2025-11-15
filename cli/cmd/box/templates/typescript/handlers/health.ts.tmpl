@@ -1,0 +1,37 @@
+import { Request, Response, HandlerFactory, Logger, Pool } from '@gravelight-studio/box';
+
+interface HealthResponse {
+  status: string;
+  timestamp: Date;
+  version: string;
+}
+
+// @box:function
+// @box:path GET /health
+// @box:auth none
+export const getHealth: HandlerFactory = (db: Pool | null, logger: Logger) => {
+  return (req: Request, res: Response) => {
+    logger.info('Health check requested');
+
+    const response: HealthResponse = {
+      status: 'healthy',
+      timestamp: new Date(),
+      version: '1.0.0'
+    };
+
+    res.status(200).json(response);
+  };
+};
+
+// @box:function
+// @box:path GET /api/hello
+// @box:auth none
+export const getHello: HandlerFactory = (db: Pool | null, logger: Logger) => {
+  return (req: Request, res: Response) => {
+    logger.info('Hello endpoint requested');
+
+    res.status(200).json({
+      message: 'Hello from Box!'
+    });
+  };
+};
