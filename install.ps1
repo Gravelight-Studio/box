@@ -11,20 +11,20 @@ $ErrorActionPreference = "Stop"
 # Colors for output
 function Write-Info {
     param([string]$Message)
-    Write-Host "✓ $Message" -ForegroundColor Green
+    Write-Host "[OK] $Message" -ForegroundColor Green
 }
 
-function Write-Warning {
+function Write-Warn {
     param([string]$Message)
-    Write-Host "⚠️  $Message" -ForegroundColor Yellow
+    Write-Host "[WARN] $Message" -ForegroundColor Yellow
 }
 
-function Write-Error {
+function Write-Err {
     param([string]$Message)
-    Write-Host "❌ $Message" -ForegroundColor Red
+    Write-Host "[ERROR] $Message" -ForegroundColor Red
 }
 
-Write-Host "🎯 Box CLI Installer for Windows" -ForegroundColor Cyan
+Write-Host "Box CLI Installer for Windows" -ForegroundColor Cyan
 Write-Host ""
 
 # Detect architecture
@@ -35,26 +35,26 @@ $Arch = if ([Environment]::Is64BitOperatingSystem) {
         "amd64"
     }
 } else {
-    Write-Error "32-bit Windows is not supported"
+    Write-Err "32-bit Windows is not supported"
     exit 1
 }
 
-Write-Host "📦 Detected platform: windows-$Arch"
+Write-Host "Detected platform: windows-$Arch"
 Write-Host ""
 
 # Get latest version if not specified
 if ($Version -eq "latest") {
-    Write-Host "🔍 Fetching latest version..."
+    Write-Host "Fetching latest version..."
     try {
         $Release = Invoke-RestMethod -Uri "https://api.github.com/repos/gravelight-studio/box/releases/latest"
         $Version = $Release.tag_name -replace '^v', ''
     } catch {
-        Write-Error "Failed to fetch latest version: $_"
+        Write-Err "Failed to fetch latest version: $_"
         exit 1
     }
 }
 
-Write-Host "📥 Downloading Box CLI v$Version..."
+Write-Host "Downloading Box CLI v$Version..."
 $BinaryName = "box-windows-$Arch.exe"
 $DownloadUrl = "https://github.com/gravelight-studio/box/releases/download/v$Version/$BinaryName"
 $ChecksumUrl = "https://github.com/gravelight-studio/box/releases/download/v$Version/$BinaryName.sha256"
@@ -70,7 +70,7 @@ try {
     try {
         Invoke-WebRequest -Uri $DownloadUrl -OutFile $BinaryPath -UseBasicParsing
     } catch {
-        Write-Error "Failed to download binary: $_"
+        Write-Err "Failed to download binary: $_"
         exit 1
     }
 
@@ -79,22 +79,22 @@ try {
     try {
         Invoke-WebRequest -Uri $ChecksumUrl -OutFile $ChecksumPath -UseBasicParsing
 
-        Write-Host "🔐 Verifying checksum..."
+        Write-Host "Verifying checksum..."
         $ExpectedHash = (Get-Content $ChecksumPath).Split()[0].ToUpper()
         $ActualHash = (Get-FileHash -Path $BinaryPath -Algorithm SHA256).Hash.ToUpper()
 
         if ($ExpectedHash -ne $ActualHash) {
-            Write-Error "Checksum verification failed!"
+            Write-Err "Checksum verification failed!"
             Write-Host "Expected: $ExpectedHash"
             Write-Host "Actual:   $ActualHash"
             exit 1
         }
     } catch {
-        Write-Warning "Failed to download/verify checksum, skipping verification"
+        Write-Warn "Failed to download/verify checksum, skipping verification"
     }
 
     # Create install directory
-    Write-Host "📦 Installing to $InstallDir..."
+    Write-Host "Installing to $InstallDir..."
     New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
 
     # Install binary
@@ -104,14 +104,14 @@ try {
     Write-Host ""
     Write-Info "Box CLI installed successfully!"
     Write-Host ""
-    Write-Host "📍 Location: $DestPath"
-    Write-Host "📦 Version: v$Version"
+    Write-Host "Location: $DestPath"
+    Write-Host "Version: v$Version"
     Write-Host ""
 
     # Check if directory is in PATH
     $UserPath = [Environment]::GetEnvironmentVariable("Path", "User")
     if ($UserPath -notlike "*$InstallDir*") {
-        Write-Warning "$InstallDir is not in your PATH"
+        Write-Warn "$InstallDir is not in your PATH"
         Write-Host ""
         Write-Host "Would you like to add it to your PATH? (Y/N)" -ForegroundColor Yellow
         $Response = Read-Host
@@ -130,7 +130,7 @@ try {
 
     # Test installation
     Write-Host ""
-    Write-Host "🎉 Installation complete!" -ForegroundColor Green
+    Write-Host "Installation complete!" -ForegroundColor Green
     Write-Host ""
     Write-Host "Get started:" -ForegroundColor Cyan
     Write-Host "  box init my-app          # Create a new project"

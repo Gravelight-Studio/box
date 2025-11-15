@@ -1,0 +1,43 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# PowerShell scripts must use CRLF on Windows
+*.ps1 text eol=crlf
+
+# Shell scripts must use LF
+*.sh text eol=lf
+
+# Go source files use LF
+*.go text eol=lf
+*.mod text eol=lf
+*.sum text eol=lf
+
+# Common text files use LF
+*.md text eol=lf
+*.txt text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.toml text eol=lf
+
+# Templates
+*.tmpl text eol=lf
+
+# Windows batch files use CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary files
+*.exe binary
+*.dll binary
+*.so binary
+*.dylib binary
+*.a binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.zip binary
+*.tar binary
+*.gz binary
