@@ -14,7 +14,7 @@
 ## Installation
 
 ```bash
-go get github.com/gravelight-studio/box
+go get github.com/gravelight-studio/box/go
 ```
 
 ## Quick Start
@@ -50,8 +50,8 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 package main
 
 import (
-    "github.com/gravelight-studio/box/annotations"
-    "github.com/gravelight-studio/box/router"
+    "github.com/gravelight-studio/box/go/annotations"
+    "github.com/gravelight-studio/box/go/router"
     "go.uber.org/zap"
 )
 
@@ -218,7 +218,7 @@ Set request timeouts:
 Parse and validate handler annotations.
 
 ```go
-import "github.com/gravelight-studio/box/annotations"
+import "github.com/gravelight-studio/box/go/annotations"
 
 // Create parser
 parser := annotations.NewParser()
@@ -258,7 +258,7 @@ type Handler struct {
 Create annotation-driven HTTP routers.
 
 ```go
-import "github.com/gravelight-studio/box/router"
+import "github.com/gravelight-studio/box/go/router"
 
 // Create router
 r, err := router.New(router.Config{
@@ -295,7 +295,7 @@ Middleware is automatically applied based on annotations:
 Generate deployment artifacts.
 
 ```go
-import "github.com/gravelight-studio/box/build"
+import "github.com/gravelight-studio/box/go/build"
 
 gen := build.NewGenerator(build.Config{
     Handlers:      handlers,

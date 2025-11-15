@@ -1,4 +1,4 @@
-module github.com/gravelight-studio/box
+module github.com/gravelight-studio/box/go
 
 go 1.23
 

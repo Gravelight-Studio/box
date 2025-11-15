@@ -9,7 +9,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/gravelight-studio/box/annotations"
+	"github.com/gravelight-studio/box/go/annotations"
 )
 
 // FunctionGenerator generates Cloud Function deployment packages

@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	"github.com/gravelight-studio/box/annotations"
+	"github.com/gravelight-studio/box/go/annotations"
 )
 
 // Integration tests for the router - tests at HTTP boundary

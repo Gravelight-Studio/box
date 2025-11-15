@@ -8,7 +8,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/gravelight-studio/box/annotations"
+	"github.com/gravelight-studio/box/go/annotations"
 )
 
 // ContainerGenerator generates Cloud Run container deployment packages

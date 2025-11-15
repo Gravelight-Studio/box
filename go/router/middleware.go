@@ -10,7 +10,7 @@ import (
 	"github.com/go-chi/cors"
 	"go.uber.org/zap"
 
-	"github.com/gravelight-studio/box/annotations"
+	"github.com/gravelight-studio/box/go/annotations"
 )
 
 // CORSMiddleware creates CORS middleware from annotation config

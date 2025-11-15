@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gravelight-studio/box/annotations"
+	"github.com/gravelight-studio/box/go/annotations"
 	"go.uber.org/zap"
 )
 

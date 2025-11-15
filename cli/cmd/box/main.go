@@ -14,8 +14,8 @@ import (
 	"github.com/manifoldco/promptui"
 	"go.uber.org/zap"
 
-	"github.com/gravelight-studio/box/annotations"
-	"github.com/gravelight-studio/box/build"
+	"github.com/gravelight-studio/box/go/annotations"
+	"github.com/gravelight-studio/box/go/build"
 )
 
 //go:embed templates/*

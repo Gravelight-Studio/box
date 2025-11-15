@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gravelight-studio/box/annotations"
+	"github.com/gravelight-studio/box/go/annotations"
 )
 
 // Parser parses TypeScript/JavaScript files for Box annotations
