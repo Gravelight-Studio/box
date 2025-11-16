@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gravelight-studio/box/go/router"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 )
 
@@ -18,7 +18,7 @@ type HealthResponse struct {
 // @box:function
 // @box:path GET /health
 // @box:auth none
-func GetHealth(db router.DB, logger *zap.Logger) http.HandlerFunc {
+func GetHealth(db *pgxpool.Pool, logger *zap.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger.Info("Health check requested")
 
@@ -37,7 +37,7 @@ func GetHealth(db router.DB, logger *zap.Logger) http.HandlerFunc {
 // @box:function
 // @box:path GET /api/hello
 // @box:auth none
-func GetHello(db router.DB, logger *zap.Logger) http.HandlerFunc {
+func GetHello(db *pgxpool.Pool, logger *zap.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger.Info("Hello endpoint requested")
 
