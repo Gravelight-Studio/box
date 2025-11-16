@@ -14,7 +14,7 @@
 ## Installation
 
 ```bash
-go get github.com/gravelight-studio/box/go
+go get github.com/gravelight-studio/box
 ```
 
 ## Quick Start
@@ -543,7 +543,7 @@ go test ./...
 go test -cover ./...
 
 # Run specific package
-go test github.com/gravelight-studio/box/annotations
+go test github.com/gravelight-studio/box/go/annotations
 ```
 
 ## Contributing

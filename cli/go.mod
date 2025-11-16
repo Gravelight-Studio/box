@@ -1,11 +1,11 @@
 module github.com/gravelight-studio/box-cli
 
-go 1.23
+go 1.23.0
 
 require (
-	github.com/gravelight-studio/box/go v0.1.0
+	github.com/gravelight-studio/box v0.1.2
 	github.com/manifoldco/promptui v0.9.0
-	go.uber.org/zap v1.26.0
+	go.uber.org/zap v1.27.0
 )
 
 require (
@@ -14,4 +14,4 @@ require (
 	golang.org/x/sys v0.0.0-20181122145206-62eef0e2fa9b // indirect
 )
 
-replace github.com/gravelight-studio/box/go => ../go
+replace github.com/gravelight-studio/box => ..

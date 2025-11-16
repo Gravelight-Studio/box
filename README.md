@@ -47,7 +47,7 @@ If you prefer to work with language-specific tools:
 
 **Go:**
 ```bash
-go get github.com/gravelight-studio/box/go
+go get github.com/gravelight-studio/box
 ```
 
 **TypeScript/JavaScript:**
