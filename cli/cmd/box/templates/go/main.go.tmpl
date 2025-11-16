@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 
+	"{{.ModuleName}}/handlers"
 	"github.com/gravelight-studio/box/go/router"
 	"go.uber.org/zap"
 )
@@ -24,9 +25,19 @@ func main() {
 		Logger:      logger,
 	}
 
-	r, err := router.NewRouter(config)
+	r, err := router.New(config)
 	if err != nil {
 		logger.Fatal("Failed to create router", zap.Error(err))
+	}
+
+	// Create handler registry and register handlers
+	registry := router.NewHandlerRegistry(nil, logger)
+	registry.Register("handlers", "GetHealth", handlers.GetHealth)
+	registry.Register("handlers", "GetHello", handlers.GetHello)
+
+	// Register all handlers with router
+	if err := r.RegisterHandlers(registry); err != nil {
+		logger.Fatal("Failed to register handlers", zap.Error(err))
 	}
 
 	// Start server
