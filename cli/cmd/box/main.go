@@ -21,7 +21,7 @@ import (
 //go:embed templates/*
 var templatesFS embed.FS
 
-const version = "0.1.2"
+const version = "0.1.3"
 
 type Language string
 
