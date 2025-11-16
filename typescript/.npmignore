@@ -1,0 +1,37 @@
+# Source files
+src/
+*.ts
+!*.d.ts
+
+# Tests
+**/__tests__/
+**/*.test.ts
+**/*.spec.ts
+jest.config.js
+
+# Development
+tsconfig.json
+.eslintrc*
+.prettierrc*
+
+# Build artifacts
+*.tsbuildinfo
+
+# Documentation (kept in dist/)
+# README.md is included
+
+# Dependencies
+node_modules/
+
+# IDE
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# Package manager
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
