@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -35,7 +34,6 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 
 	router, err := New(Config{
 		HandlersDir: tmpDir,
-		DB:          nil,
 		Logger:      zap.NewNop(),
 	})
 
@@ -76,7 +74,6 @@ func GetAccount(w http.ResponseWriter, r *http.Request) {}
 
 	router, err := New(Config{
 		HandlersDir: tmpDir,
-		DB:          nil,
 		Logger:      zap.NewNop(),
 	})
 
@@ -98,18 +95,15 @@ func TestHandler(w http.ResponseWriter, r *http.Request) {}
 
 	router, err := New(Config{
 		HandlersDir: tmpDir,
-		DB:          nil,
 		Logger:      zap.NewNop(),
 	})
 	require.NoError(t, err)
 
 	// Create registry and register handler
-	registry := NewHandlerRegistry(nil, zap.NewNop())
-	registry.Register("handlers", "TestHandler", func(db *pgxpool.Pool, logger *zap.Logger) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("test response"))
-		}
+	registry := NewHandlerRegistry(zap.NewNop())
+	registry.Register("handlers", "TestHandler", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("test response"))
 	})
 
 	// Register handlers with router
@@ -156,12 +150,11 @@ func Patch(w http.ResponseWriter, r *http.Request) {}
 
 	router, err := New(Config{
 		HandlersDir: tmpDir,
-		DB:          nil,
 		Logger:      zap.NewNop(),
 	})
 	require.NoError(t, err)
 
-	registry := NewHandlerRegistry(nil, zap.NewNop())
+	registry := NewHandlerRegistry(zap.NewNop())
 	registry.Register("handlers", "Get", testHandler("GET"))
 	registry.Register("handlers", "Post", testHandler("POST"))
 	registry.Register("handlers", "Put", testHandler("PUT"))
@@ -201,12 +194,11 @@ func TestHandler(w http.ResponseWriter, r *http.Request) {}
 
 	router, err := New(Config{
 		HandlersDir: tmpDir,
-		DB:          nil,
 		Logger:      zap.NewNop(),
 	})
 	require.NoError(t, err)
 
-	registry := NewHandlerRegistry(nil, zap.NewNop())
+	registry := NewHandlerRegistry(zap.NewNop())
 	registry.Register("handlers", "TestHandler", testHandler("OK"))
 
 	err = router.RegisterHandlers(registry)
@@ -285,12 +277,11 @@ func TestHandler(w http.ResponseWriter, r *http.Request) {}
 
 			router, err := New(Config{
 				HandlersDir: tmpDir,
-				DB:          nil,
 				Logger:      zap.NewNop(),
 			})
 			require.NoError(t, err)
 
-			registry := NewHandlerRegistry(nil, zap.NewNop())
+			registry := NewHandlerRegistry(zap.NewNop())
 			registry.Register("handlers", "TestHandler", testHandler("OK"))
 
 			err = router.RegisterHandlers(registry)
@@ -325,12 +316,11 @@ func TestHandler(w http.ResponseWriter, r *http.Request) {}
 
 	router, err := New(Config{
 		HandlersDir: tmpDir,
-		DB:          nil,
 		Logger:      zap.NewNop(),
 	})
 	require.NoError(t, err)
 
-	registry := NewHandlerRegistry(nil, zap.NewNop())
+	registry := NewHandlerRegistry(zap.NewNop())
 	registry.Register("handlers", "TestHandler", testHandler("OK"))
 
 	err = router.RegisterHandlers(registry)
@@ -372,19 +362,16 @@ func TestHandler(w http.ResponseWriter, r *http.Request) {}
 
 	router, err := New(Config{
 		HandlersDir: tmpDir,
-		DB:          nil,
 		Logger:      zap.NewNop(),
 	})
 	require.NoError(t, err)
 
-	registry := NewHandlerRegistry(nil, zap.NewNop())
+	registry := NewHandlerRegistry(zap.NewNop())
 
 	// Handler that sleeps longer than timeout
-	registry.Register("handlers", "TestHandler", func(db *pgxpool.Pool, logger *zap.Logger) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			time.Sleep(200 * time.Millisecond)
-			w.Write([]byte("should not reach here"))
-		}
+	registry.Register("handlers", "TestHandler", func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(200 * time.Millisecond)
+		w.Write([]byte("should not reach here"))
 	})
 
 	err = router.RegisterHandlers(registry)
@@ -420,21 +407,16 @@ func GetUserPost(w http.ResponseWriter, r *http.Request) {}
 
 	router, err := New(Config{
 		HandlersDir: tmpDir,
-		DB:          nil,
 		Logger:      zap.NewNop(),
 	})
 	require.NoError(t, err)
 
-	registry := NewHandlerRegistry(nil, zap.NewNop())
-	registry.Register("handlers", "GetUser", func(db *pgxpool.Pool, logger *zap.Logger) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("user"))
-		}
+	registry := NewHandlerRegistry(zap.NewNop())
+	registry.Register("handlers", "GetUser", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("user"))
 	})
-	registry.Register("handlers", "GetUserPost", func(db *pgxpool.Pool, logger *zap.Logger) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("user-post"))
-		}
+	registry.Register("handlers", "GetUserPost", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("user-post"))
 	})
 
 	err = router.RegisterHandlers(registry)
@@ -469,13 +451,12 @@ func TestHandler(w http.ResponseWriter, r *http.Request) {}
 
 	router, err := New(Config{
 		HandlersDir: tmpDir,
-		DB:          nil,
 		Logger:      zap.NewNop(),
 	})
 	require.NoError(t, err)
 
 	// Don't register the handler
-	registry := NewHandlerRegistry(nil, zap.NewNop())
+	registry := NewHandlerRegistry(zap.NewNop())
 
 	// This should fail because handler is not registered
 	err = router.RegisterHandlers(registry)
@@ -486,7 +467,6 @@ func TestHandler(w http.ResponseWriter, r *http.Request) {}
 func TestIntegration_InvalidHandlerDirectory(t *testing.T) {
 	router, err := New(Config{
 		HandlersDir: "/nonexistent/directory",
-		DB:          nil,
 		Logger:      zap.NewNop(),
 	})
 
@@ -499,7 +479,6 @@ func TestIntegration_EmptyHandlerDirectory(t *testing.T) {
 
 	router, err := New(Config{
 		HandlersDir: tmpDir,
-		DB:          nil,
 		Logger:      zap.NewNop(),
 	})
 
@@ -526,12 +505,11 @@ func TestHandler(w http.ResponseWriter, r *http.Request) {}
 
 	router, err := New(Config{
 		HandlersDir: tmpDir,
-		DB:          nil,
 		Logger:      zap.NewNop(),
 	})
 	require.NoError(t, err)
 
-	registry := NewHandlerRegistry(nil, zap.NewNop())
+	registry := NewHandlerRegistry(zap.NewNop())
 	registry.Register("handlers", "TestHandler", testHandler("OK"))
 
 	err = router.RegisterHandlers(registry)
@@ -567,12 +545,10 @@ func createTestHandlerDir(t *testing.T, files map[string]string) string {
 	return tmpDir
 }
 
-func testHandler(response string) HandlerFactory {
-	return func(db *pgxpool.Pool, logger *zap.Logger) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(response))
-		}
+func testHandler(response string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(response))
 	}
 }
 
