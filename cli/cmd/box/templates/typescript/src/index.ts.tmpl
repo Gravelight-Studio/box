@@ -1,5 +1,6 @@
-import { createRouter } from '@gravelight-studio/box';
+import { BoxRouter, HandlerRegistry } from '@gravelight-studio/box';
 import pino from 'pino';
+import * as handlers from '../handlers/health';
 
 const logger = pino({
   transport: {
@@ -14,13 +15,25 @@ const logger = pino({
 async function main() {
   try {
     // Create router
-    const app = await createRouter({
+    const router = new BoxRouter({
       handlersDir: './handlers',
       logger
     });
 
-    // Start server
+    await router.initialize();
+
+    // Create registry and register handlers
+    const registry = new HandlerRegistry(logger);
+    registry.register('health', 'getHealth', handlers.getHealth);
+    registry.register('health', 'getHello', handlers.getHello);
+
+    // Register all handlers with router
+    router.registerHandlers(registry);
+
+    // Get Express app and start server
+    const app = router.getApp();
     const port = process.env.PORT || 8080;
+
     app.listen(port, () => {
       logger.info(`Server listening on port ${port}`);
     });

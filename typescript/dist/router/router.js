@@ -12,19 +12,17 @@ const middleware_1 = require("./middleware");
  * Handler registry for storing handler implementations
  */
 class HandlerRegistry {
-    db;
     logger;
     handlers = new Map();
-    constructor(db, logger) {
-        this.db = db;
+    constructor(logger) {
         this.logger = logger;
     }
     /**
      * Register a handler implementation
      */
-    register(packageName, functionName, factory) {
+    register(packageName, functionName, handler) {
         const key = `${packageName}.${functionName}`;
-        this.handlers.set(key, factory);
+        this.handlers.set(key, handler);
         this.logger.debug(`Registered handler: ${key}`);
     }
     /**
@@ -33,18 +31,6 @@ class HandlerRegistry {
     get(packageName, functionName) {
         const key = `${packageName}.${functionName}`;
         return this.handlers.get(key);
-    }
-    /**
-     * Get the database pool
-     */
-    getDB() {
-        return this.db;
-    }
-    /**
-     * Get the logger
-     */
-    getLogger() {
-        return this.logger;
     }
 }
 exports.HandlerRegistry = HandlerRegistry;
@@ -82,8 +68,8 @@ class BoxRouter {
      */
     registerHandlers(registry) {
         for (const handler of this.handlers) {
-            const factory = registry.get(handler.packageName, handler.functionName);
-            if (!factory) {
+            const handlerFn = registry.get(handler.packageName, handler.functionName);
+            if (!handlerFn) {
                 this.config.logger.warn(`Handler not found in registry: ${handler.packageName}.${handler.functionName}`);
                 continue;
             }
@@ -106,7 +92,6 @@ class BoxRouter {
                 middleware.push((0, middleware_1.createTimeoutMiddleware)(handler.timeout));
             }
             // Add the actual handler
-            const handlerFn = factory(registry.getDB(), registry.getLogger());
             middleware.push(handlerFn);
             // Register route with Express
             const method = handler.route.method.toLowerCase();

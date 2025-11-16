@@ -1,5 +1,4 @@
 import express, { Express, RequestHandler, Request as ExpressRequest, Response as ExpressResponse } from 'express';
-import { Pool as PgPool } from 'pg';
 import { Handler, Parser, AuthType } from '../annotations';
 import {
   createCORSMiddleware,
@@ -21,11 +20,6 @@ export type Request = ExpressRequest;
 export type Response = ExpressResponse;
 
 /**
- * PostgreSQL connection pool type (re-exported from pg for convenience)
- */
-export type Pool = PgPool;
-
-/**
  * Logger interface (compatible with pino)
  */
 export interface Logger {
@@ -36,22 +30,10 @@ export interface Logger {
 }
 
 /**
- * Handler function type
- */
-export type HandlerFunction = (req: Request, res: Response) => void | Promise<void>;
-
-/**
- * Handler factory function type
- * Returns a function compatible with Express middleware
- */
-export type HandlerFactory = (db: PgPool | null, logger: Logger) => RequestHandler;
-
-/**
  * Router configuration
  */
 export interface RouterConfig {
   handlersDir: string;
-  db?: PgPool | null;
   logger: Logger;
 }
 
@@ -59,42 +41,25 @@ export interface RouterConfig {
  * Handler registry for storing handler implementations
  */
 export class HandlerRegistry {
-  private handlers: Map<string, HandlerFactory> = new Map();
+  private handlers: Map<string, RequestHandler> = new Map();
 
-  constructor(
-    private db: PgPool | null,
-    private logger: Logger
-  ) {}
+  constructor(private logger: Logger) {}
 
   /**
    * Register a handler implementation
    */
-  register(packageName: string, functionName: string, factory: HandlerFactory): void {
+  register(packageName: string, functionName: string, handler: RequestHandler): void {
     const key = `${packageName}.${functionName}`;
-    this.handlers.set(key, factory);
+    this.handlers.set(key, handler);
     this.logger.debug(`Registered handler: ${key}`);
   }
 
   /**
    * Get a handler implementation
    */
-  get(packageName: string, functionName: string): HandlerFactory | undefined {
+  get(packageName: string, functionName: string): RequestHandler | undefined {
     const key = `${packageName}.${functionName}`;
     return this.handlers.get(key);
-  }
-
-  /**
-   * Get the database pool
-   */
-  getDB(): PgPool | null {
-    return this.db;
-  }
-
-  /**
-   * Get the logger
-   */
-  getLogger(): Logger {
-    return this.logger;
   }
 }
 
@@ -138,9 +103,9 @@ export class BoxRouter {
    */
   registerHandlers(registry: HandlerRegistry): void {
     for (const handler of this.handlers) {
-      const factory = registry.get(handler.packageName, handler.functionName);
+      const handlerFn = registry.get(handler.packageName, handler.functionName);
 
-      if (!factory) {
+      if (!handlerFn) {
         this.config.logger.warn(
           `Handler not found in registry: ${handler.packageName}.${handler.functionName}`
         );
@@ -171,7 +136,6 @@ export class BoxRouter {
       }
 
       // Add the actual handler
-      const handlerFn = factory(registry.getDB(), registry.getLogger());
       middleware.push(handlerFn);
 
       // Register route with Express

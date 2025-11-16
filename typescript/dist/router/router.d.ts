@@ -1,5 +1,4 @@
 import { Express, RequestHandler, Request as ExpressRequest, Response as ExpressResponse } from 'express';
-import { Pool as PgPool } from 'pg';
 import { Handler } from '../annotations';
 /**
  * HTTP Request type (re-exported from Express for convenience)
@@ -10,10 +9,6 @@ export type Request = ExpressRequest;
  */
 export type Response = ExpressResponse;
 /**
- * PostgreSQL connection pool type (re-exported from pg for convenience)
- */
-export type Pool = PgPool;
-/**
  * Logger interface (compatible with pino)
  */
 export interface Logger {
@@ -23,46 +18,27 @@ export interface Logger {
     debug(msg: string, ...args: any[]): void;
 }
 /**
- * Handler function type
- */
-export type HandlerFunction = (req: Request, res: Response) => void | Promise<void>;
-/**
- * Handler factory function type
- * Returns a function compatible with Express middleware
- */
-export type HandlerFactory = (db: PgPool | null, logger: Logger) => RequestHandler;
-/**
  * Router configuration
  */
 export interface RouterConfig {
     handlersDir: string;
-    db?: PgPool | null;
     logger: Logger;
 }
 /**
  * Handler registry for storing handler implementations
  */
 export declare class HandlerRegistry {
-    private db;
     private logger;
     private handlers;
-    constructor(db: PgPool | null, logger: Logger);
+    constructor(logger: Logger);
     /**
      * Register a handler implementation
      */
-    register(packageName: string, functionName: string, factory: HandlerFactory): void;
+    register(packageName: string, functionName: string, handler: RequestHandler): void;
     /**
      * Get a handler implementation
      */
-    get(packageName: string, functionName: string): HandlerFactory | undefined;
-    /**
-     * Get the database pool
-     */
-    getDB(): PgPool | null;
-    /**
-     * Get the logger
-     */
-    getLogger(): Logger;
+    get(packageName: string, functionName: string): RequestHandler | undefined;
 }
 /**
  * Box router with annotation-driven route registration
