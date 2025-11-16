@@ -31,7 +31,7 @@ func main() {
 	}
 
 	// Create handler registry and register handlers
-	registry := router.NewHandlerRegistry(nil, logger)
+	registry := router.NewHandlerRegistry(logger)
 	registry.Register("handlers", "GetHealth", handlers.GetHealth)
 	registry.Register("handlers", "GetHello", handlers.GetHello)
 

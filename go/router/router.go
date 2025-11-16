@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 
 	"github.com/gravelight-studio/box/go/annotations"
@@ -15,14 +14,12 @@ import (
 type Router struct {
 	chi.Router
 	handlers []annotations.Handler
-	db       *pgxpool.Pool
 	logger   *zap.Logger
 }
 
 // Config holds router configuration
 type Config struct {
 	HandlersDir string // Directory to scan for handlers (e.g., "./internal/handlers")
-	DB          *pgxpool.Pool
 	Logger      *zap.Logger
 }
 
@@ -72,7 +69,6 @@ func New(config Config) (*Router, error) {
 	r := &Router{
 		Router:   chi.NewRouter(),
 		handlers: result.Handlers,
-		db:       config.DB,
 		logger:   config.Logger,
 	}
 

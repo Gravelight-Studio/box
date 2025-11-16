@@ -4,48 +4,42 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 )
 
-// HandlerFactory is a function that creates an HTTP handler
-// It receives database and logger dependencies and returns the handler function
-type HandlerFactory func(db *pgxpool.Pool, logger *zap.Logger) http.HandlerFunc
-
-// HandlerRegistry maps package.function names to handler factories
+// HandlerRegistry maps package.function names to HTTP handlers
 type HandlerRegistry struct {
-	handlers map[string]HandlerFactory
-	db       *pgxpool.Pool
+	handlers map[string]http.HandlerFunc
 	logger   *zap.Logger
 }
 
 // NewHandlerRegistry creates a new handler registry
-func NewHandlerRegistry(db *pgxpool.Pool, logger *zap.Logger) *HandlerRegistry {
+func NewHandlerRegistry(logger *zap.Logger) *HandlerRegistry {
 	return &HandlerRegistry{
-		handlers: make(map[string]HandlerFactory),
-		db:       db,
+		handlers: make(map[string]http.HandlerFunc),
 		logger:   logger,
 	}
 }
 
 // Register adds a handler to the registry
-func (r *HandlerRegistry) Register(packageName, functionName string, factory HandlerFactory) {
+func (r *HandlerRegistry) Register(packageName, functionName string, handler http.HandlerFunc) {
 	key := fmt.Sprintf("%s.%s", packageName, functionName)
-	r.handlers[key] = factory
-	r.logger.Debug("Handler registered", zap.String("handler", key))
+	r.handlers[key] = handler
+	if r.logger != nil {
+		r.logger.Debug("Handler registered", zap.String("handler", key))
+	}
 }
 
 // GetHandler retrieves a handler by package and function name
 func (r *HandlerRegistry) GetHandler(packageName, functionName string) (http.HandlerFunc, error) {
 	key := fmt.Sprintf("%s.%s", packageName, functionName)
 
-	factory, exists := r.handlers[key]
+	handler, exists := r.handlers[key]
 	if !exists {
 		return nil, fmt.Errorf("handler not found: %s", key)
 	}
 
-	// Create handler instance with dependencies
-	return factory(r.db, r.logger), nil
+	return handler, nil
 }
 
 // ListHandlers returns all registered handler names

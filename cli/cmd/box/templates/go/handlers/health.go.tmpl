@@ -4,9 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
-
-	"github.com/jackc/pgx/v5/pgxpool"
-	"go.uber.org/zap"
 )
 
 type HealthResponse struct {
@@ -18,35 +15,27 @@ type HealthResponse struct {
 // @box:function
 // @box:path GET /health
 // @box:auth none
-func GetHealth(db *pgxpool.Pool, logger *zap.Logger) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		logger.Info("Health check requested")
-
-		response := HealthResponse{
-			Status:    "healthy",
-			Timestamp: time.Now(),
-			Version:   "1.0.0",
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+func GetHealth(w http.ResponseWriter, r *http.Request) {
+	response := HealthResponse{
+		Status:    "healthy",
+		Timestamp: time.Now(),
+		Version:   "1.0.0",
 	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 }
 
 // @box:function
 // @box:path GET /api/hello
 // @box:auth none
-func GetHello(db *pgxpool.Pool, logger *zap.Logger) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		logger.Info("Hello endpoint requested")
-
-		response := map[string]string{
-			"message": "Hello from Box!",
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+func GetHello(w http.ResponseWriter, r *http.Request) {
+	response := map[string]string{
+		"message": "Hello from Box!",
 	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 }
