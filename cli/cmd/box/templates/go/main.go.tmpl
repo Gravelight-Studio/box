@@ -19,25 +19,19 @@ func main() {
 	}
 	defer logger.Sync()
 
-	// Create router
+	// Create and initialize router
 	config := router.Config{
 		HandlersDir: "./handlers",
 		Logger:      logger,
+		Handlers: map[string]http.HandlerFunc{
+			"handlers.GetHealth": handlers.GetHealth,
+			"handlers.GetHello":  handlers.GetHello,
+		},
 	}
 
 	r, err := router.New(config)
 	if err != nil {
 		logger.Fatal("Failed to create router", zap.Error(err))
-	}
-
-	// Create handler registry and register handlers
-	registry := router.NewHandlerRegistry(logger)
-	registry.Register("handlers", "GetHealth", handlers.GetHealth)
-	registry.Register("handlers", "GetHello", handlers.GetHello)
-
-	// Register all handlers with router
-	if err := r.RegisterHandlers(registry); err != nil {
-		logger.Fatal("Failed to register handlers", zap.Error(err))
 	}
 
 	// Start server

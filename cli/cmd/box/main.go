@@ -21,7 +21,8 @@ import (
 //go:embed templates/*
 var templatesFS embed.FS
 
-const version = "0.1.7"
+// version is set via -ldflags at build time from the root VERSION file
+var version = "dev"
 
 type Language string
 
@@ -207,6 +208,7 @@ func createProject(name string, lang Language, path string, githubUsername strin
 	data := map[string]interface{}{
 		"ProjectName": name,
 		"ModuleName":  moduleName,
+		"Version":     version,
 	}
 
 	// Copy templates based on language

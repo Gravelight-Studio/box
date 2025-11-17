@@ -35,6 +35,11 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 	router, err := New(Config{
 		HandlersDir: tmpDir,
 		Logger:      zap.NewNop(),
+		Handlers: map[string]http.HandlerFunc{
+			"handlers.GetUsers": func(w http.ResponseWriter, r *http.Request) {
+				w.Write([]byte("users"))
+			},
+		},
 	})
 
 	require.NoError(t, err)
@@ -75,6 +80,11 @@ func GetAccount(w http.ResponseWriter, r *http.Request) {}
 	router, err := New(Config{
 		HandlersDir: tmpDir,
 		Logger:      zap.NewNop(),
+		Handlers: map[string]http.HandlerFunc{
+			"handlers.GetUsers":   testHandler("users"),
+			"handlers.CreateUser": testHandler("created"),
+			"handlers.GetAccount": testHandler("account"),
+		},
 	})
 
 	require.NoError(t, err)
@@ -96,18 +106,13 @@ func TestHandler(w http.ResponseWriter, r *http.Request) {}
 	router, err := New(Config{
 		HandlersDir: tmpDir,
 		Logger:      zap.NewNop(),
+		Handlers: map[string]http.HandlerFunc{
+			"handlers.TestHandler": func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte("test response"))
+			},
+		},
 	})
-	require.NoError(t, err)
-
-	// Create registry and register handler
-	registry := NewHandlerRegistry(zap.NewNop())
-	registry.Register("handlers", "TestHandler", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("test response"))
-	})
-
-	// Register handlers with router
-	err = router.RegisterHandlers(registry)
 	require.NoError(t, err)
 
 	// Test HTTP request
@@ -151,17 +156,14 @@ func Patch(w http.ResponseWriter, r *http.Request) {}
 	router, err := New(Config{
 		HandlersDir: tmpDir,
 		Logger:      zap.NewNop(),
+		Handlers: map[string]http.HandlerFunc{
+			"handlers.Get":    testHandler("GET"),
+			"handlers.Post":   testHandler("POST"),
+			"handlers.Put":    testHandler("PUT"),
+			"handlers.Delete": testHandler("DELETE"),
+			"handlers.Patch":  testHandler("PATCH"),
+		},
 	})
-	require.NoError(t, err)
-
-	registry := NewHandlerRegistry(zap.NewNop())
-	registry.Register("handlers", "Get", testHandler("GET"))
-	registry.Register("handlers", "Post", testHandler("POST"))
-	registry.Register("handlers", "Put", testHandler("PUT"))
-	registry.Register("handlers", "Delete", testHandler("DELETE"))
-	registry.Register("handlers", "Patch", testHandler("PATCH"))
-
-	err = router.RegisterHandlers(registry)
 	require.NoError(t, err)
 
 	// Test each HTTP method
@@ -195,13 +197,10 @@ func TestHandler(w http.ResponseWriter, r *http.Request) {}
 	router, err := New(Config{
 		HandlersDir: tmpDir,
 		Logger:      zap.NewNop(),
+		Handlers: map[string]http.HandlerFunc{
+			"handlers.TestHandler": testHandler("OK"),
+		},
 	})
-	require.NoError(t, err)
-
-	registry := NewHandlerRegistry(zap.NewNop())
-	registry.Register("handlers", "TestHandler", testHandler("OK"))
-
-	err = router.RegisterHandlers(registry)
 	require.NoError(t, err)
 
 	// Test CORS headers with actual request
@@ -278,13 +277,10 @@ func TestHandler(w http.ResponseWriter, r *http.Request) {}
 			router, err := New(Config{
 				HandlersDir: tmpDir,
 				Logger:      zap.NewNop(),
+				Handlers: map[string]http.HandlerFunc{
+					"handlers.TestHandler": testHandler("OK"),
+				},
 			})
-			require.NoError(t, err)
-
-			registry := NewHandlerRegistry(zap.NewNop())
-			registry.Register("handlers", "TestHandler", testHandler("OK"))
-
-			err = router.RegisterHandlers(registry)
 			require.NoError(t, err)
 
 			// Test auth middleware
@@ -317,13 +313,10 @@ func TestHandler(w http.ResponseWriter, r *http.Request) {}
 	router, err := New(Config{
 		HandlersDir: tmpDir,
 		Logger:      zap.NewNop(),
+		Handlers: map[string]http.HandlerFunc{
+			"handlers.TestHandler": testHandler("OK"),
+		},
 	})
-	require.NoError(t, err)
-
-	registry := NewHandlerRegistry(zap.NewNop())
-	registry.Register("handlers", "TestHandler", testHandler("OK"))
-
-	err = router.RegisterHandlers(registry)
 	require.NoError(t, err)
 
 	// Make requests up to the limit
@@ -363,18 +356,13 @@ func TestHandler(w http.ResponseWriter, r *http.Request) {}
 	router, err := New(Config{
 		HandlersDir: tmpDir,
 		Logger:      zap.NewNop(),
+		Handlers: map[string]http.HandlerFunc{
+			"handlers.TestHandler": func(w http.ResponseWriter, r *http.Request) {
+				time.Sleep(200 * time.Millisecond)
+				w.Write([]byte("should not reach here"))
+			},
+		},
 	})
-	require.NoError(t, err)
-
-	registry := NewHandlerRegistry(zap.NewNop())
-
-	// Handler that sleeps longer than timeout
-	registry.Register("handlers", "TestHandler", func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(200 * time.Millisecond)
-		w.Write([]byte("should not reach here"))
-	})
-
-	err = router.RegisterHandlers(registry)
 	require.NoError(t, err)
 
 	// Test that request times out
@@ -408,18 +396,15 @@ func GetUserPost(w http.ResponseWriter, r *http.Request) {}
 	router, err := New(Config{
 		HandlersDir: tmpDir,
 		Logger:      zap.NewNop(),
+		Handlers: map[string]http.HandlerFunc{
+			"handlers.GetUser": func(w http.ResponseWriter, r *http.Request) {
+				w.Write([]byte("user"))
+			},
+			"handlers.GetUserPost": func(w http.ResponseWriter, r *http.Request) {
+				w.Write([]byte("user-post"))
+			},
+		},
 	})
-	require.NoError(t, err)
-
-	registry := NewHandlerRegistry(zap.NewNop())
-	registry.Register("handlers", "GetUser", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("user"))
-	})
-	registry.Register("handlers", "GetUserPost", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("user-post"))
-	})
-
-	err = router.RegisterHandlers(registry)
 	require.NoError(t, err)
 
 	// Test single path parameter
@@ -449,25 +434,24 @@ func TestHandler(w http.ResponseWriter, r *http.Request) {}
 `,
 	})
 
+	// Don't provide the handler implementation - this should fail
 	router, err := New(Config{
 		HandlersDir: tmpDir,
 		Logger:      zap.NewNop(),
+		Handlers:    map[string]http.HandlerFunc{}, // Empty handlers map
 	})
-	require.NoError(t, err)
-
-	// Don't register the handler
-	registry := NewHandlerRegistry(zap.NewNop())
 
 	// This should fail because handler is not registered
-	err = router.RegisterHandlers(registry)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "not found")
+	assert.Nil(t, router)
 }
 
 func TestIntegration_InvalidHandlerDirectory(t *testing.T) {
 	router, err := New(Config{
 		HandlersDir: "/nonexistent/directory",
 		Logger:      zap.NewNop(),
+		Handlers:    map[string]http.HandlerFunc{},
 	})
 
 	assert.Error(t, err)
@@ -480,6 +464,7 @@ func TestIntegration_EmptyHandlerDirectory(t *testing.T) {
 	router, err := New(Config{
 		HandlersDir: tmpDir,
 		Logger:      zap.NewNop(),
+		Handlers:    map[string]http.HandlerFunc{},
 	})
 
 	require.NoError(t, err)
@@ -506,13 +491,10 @@ func TestHandler(w http.ResponseWriter, r *http.Request) {}
 	router, err := New(Config{
 		HandlersDir: tmpDir,
 		Logger:      zap.NewNop(),
+		Handlers: map[string]http.HandlerFunc{
+			"handlers.TestHandler": testHandler("OK"),
+		},
 	})
-	require.NoError(t, err)
-
-	registry := NewHandlerRegistry(zap.NewNop())
-	registry.Register("handlers", "TestHandler", testHandler("OK"))
-
-	err = router.RegisterHandlers(registry)
 	require.NoError(t, err)
 
 	// Test with all middleware requirements

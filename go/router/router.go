@@ -3,6 +3,7 @@ package router
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
@@ -19,8 +20,9 @@ type Router struct {
 
 // Config holds router configuration
 type Config struct {
-	HandlersDir string // Directory to scan for handlers (e.g., "./internal/handlers")
+	HandlersDir string                        // Directory to scan for handlers (e.g., "./internal/handlers")
 	Logger      *zap.Logger
+	Handlers    map[string]http.HandlerFunc   // Map of handler implementations (key format: "package.function")
 }
 
 // New creates a new annotation-driven router
@@ -72,11 +74,28 @@ func New(config Config) (*Router, error) {
 		logger:   config.Logger,
 	}
 
+	// Create internal registry and register all provided handlers
+	registry := newHandlerRegistry(config.Logger)
+	for key, handler := range config.Handlers {
+		// Parse package.function format
+		parts := strings.SplitN(key, ".", 2)
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("invalid handler key format: %s (expected 'package.function')", key)
+		}
+		packageName, functionName := parts[0], parts[1]
+		registry.register(packageName, functionName, handler)
+	}
+
+	// Wire up all handlers with routes and middleware
+	if err := r.registerHandlers(registry); err != nil {
+		return nil, err
+	}
+
 	return r, nil
 }
 
-// RegisterHandlers registers all parsed handlers with the router
-func (r *Router) RegisterHandlers(registry *HandlerRegistry) error {
+// registerHandlers registers all parsed handlers with the router (internal method)
+func (r *Router) registerHandlers(registry *handlerRegistry) error {
 	for _, handler := range r.handlers {
 		r.logger.Info("Registering handler",
 			zap.String("function", handler.FunctionName),
@@ -85,7 +104,7 @@ func (r *Router) RegisterHandlers(registry *HandlerRegistry) error {
 			zap.String("deployment", string(handler.DeploymentType)))
 
 		// Get the actual handler function from registry
-		handlerFunc, err := registry.GetHandler(handler.PackageName, handler.FunctionName)
+		handlerFunc, err := registry.getHandler(handler.PackageName, handler.FunctionName)
 		if err != nil {
 			r.logger.Error("Handler not found in registry",
 				zap.String("package", handler.PackageName),

@@ -25,17 +25,17 @@ jobs:
       - name: Check for version changes
         id: check_changes
         run: |
-          # Check if version in main.go changed
-          if git diff HEAD^ HEAD -- cli/cmd/box/main.go | grep -q 'const version'; then
+          # Check if VERSION file changed
+          if git diff HEAD^ HEAD -- VERSION | grep -q '.'; then
             echo "should_release=true" >> $GITHUB_OUTPUT
           else
             echo "should_release=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Get version from main.go
+      - name: Get version from VERSION file
         id: get_version
         run: |
-          VERSION=$(grep 'const version = ' cli/cmd/box/main.go | sed 's/const version = "\(.*\)"/\1/')
+          VERSION=$(cat VERSION | tr -d '[:space:]')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Detected version: $VERSION"
 
@@ -92,11 +92,16 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 0
         run: |
+          # Read version from VERSION file
+          VERSION=$(cat ../VERSION | tr -d '[:space:]')
+
           OUTPUT_NAME="box-${{ matrix.os }}-${{ matrix.arch }}"
           if [ "${{ matrix.goos }}" = "windows" ]; then
             OUTPUT_NAME="${OUTPUT_NAME}.exe"
           fi
-          go build -ldflags="-s -w" -o "bin/${OUTPUT_NAME}" ./cmd/box
+
+          # Build with version injected via ldflags
+          go build -ldflags="-s -w -X main.version=${VERSION}" -o "bin/${OUTPUT_NAME}" ./cmd/box
 
           # Create checksum
           cd bin

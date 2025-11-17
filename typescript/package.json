@@ -1,6 +1,6 @@
 {
   "name": "@gravelight-studio/box",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Annotation-driven API framework with hybrid cloud deployment",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -12,7 +12,8 @@
     "test:coverage": "jest --coverage",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
-    "prepublishOnly": "npm run build"
+    "sync-version": "node scripts/sync-version.js",
+    "prepublishOnly": "npm run sync-version && npm run build"
   },
   "keywords": [
     "api",
