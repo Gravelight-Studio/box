@@ -52,9 +52,19 @@ class BoxRouter {
         this.config.logger.info(`Parsed ${handlers.length} handlers from ${this.config.handlersDirs.join(',')}`);
         // Register all provided handler implementations
         for (const handler of handlers) {
-            const handlerFn = require((0, node_path_1.resolve)(handler.filePath))[handler.functionName];
+            // Resolve path relative to current working directory
+            const absolutePath = (0, node_path_1.resolve)(process.cwd(), handler.filePath);
+            this.config.logger.debug(`Loading handler from: ${absolutePath}`);
+            let handlerFn;
+            try {
+                handlerFn = require(absolutePath)[handler.functionName];
+            }
+            catch (error) {
+                this.config.logger.error(`Failed to load handler file ${absolutePath}: ${error}`);
+                continue;
+            }
             if (!handlerFn) {
-                this.config.logger.warn(`Handler not found: ${handler.packageName}.${handler.functionName}`);
+                this.config.logger.warn(`Handler function '${handler.functionName}' not found in ${absolutePath}`);
                 continue;
             }
             // Build middleware chain
@@ -77,9 +87,11 @@ class BoxRouter {
             }
             // Add the actual handler
             middleware.push(handlerFn);
+            // Convert Chi-style path parameters {id} to Express-style :id
+            const expressPath = handler.route.path.replace(/\{(\w+)\}/g, ':$1');
             // Register route with Express
             const method = handler.route.method.toLowerCase();
-            this.app[method](handler.route.path, ...middleware);
+            this.app[method](expressPath, ...middleware);
             this.config.logger.info(`Registered ${handler.route.method} ${handler.route.path} -> ${handler.functionName} [${handler.deploymentType}]`);
         }
         // Add error handling middleware last
@@ -94,6 +106,7 @@ class BoxRouter {
             this.config.logger.info(`Server listening on port ${port}`);
             if (callback)
                 callback();
+            console.log(this.app.routes);
         });
     }
 }

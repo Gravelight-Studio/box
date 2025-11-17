@@ -154,7 +154,7 @@ Thanks to all contributors who have helped make Box better!
 Box is open source and free to use. If you find it valuable, consider supporting its development:
 
 - **[GitHub Sponsors](https://github.com/sponsors/gravelight-studio)** - Sponsor ongoing development
-- **[Open Collective](https://opencollective.com/box)** - One-time or recurring contributions
+- **[Open Collective](https://opencollective.com/gl-box)** - One-time or recurring contributions
 
 Your support helps maintain the project, add new language implementations, and improve documentation.
 

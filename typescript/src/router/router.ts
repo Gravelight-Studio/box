@@ -91,11 +91,24 @@ export class BoxRouter {
 
     // Register all provided handler implementations
     for (const handler of handlers) {
-      const handlerFn = require(resolve(handler.filePath))[handler.functionName]
+      // Resolve path relative to current working directory
+      const absolutePath = resolve(process.cwd(), handler.filePath);
+
+      this.config.logger.debug(`Loading handler from: ${absolutePath}`);
+
+      let handlerFn;
+      try {
+        handlerFn = require(absolutePath)[handler.functionName];
+      } catch (error) {
+        this.config.logger.error(
+          `Failed to load handler file ${absolutePath}: ${error}`
+        );
+        continue;
+      }
 
       if (!handlerFn) {
         this.config.logger.warn(
-          `Handler not found: ${handler.packageName}.${handler.functionName}`
+          `Handler function '${handler.functionName}' not found in ${absolutePath}`
         );
         continue;
       }
@@ -126,9 +139,12 @@ export class BoxRouter {
       // Add the actual handler
       middleware.push(handlerFn);
 
+      // Convert Chi-style path parameters {id} to Express-style :id
+      const expressPath = handler.route.path.replace(/\{(\w+)\}/g, ':$1');
+
       // Register route with Express
       const method = handler.route.method.toLowerCase() as 'get' | 'post' | 'put' | 'delete' | 'patch';
-      this.app[method](handler.route.path, ...middleware);
+      this.app[method](expressPath, ...middleware);
 
       this.config.logger.info(
         `Registered ${handler.route.method} ${handler.route.path} -> ${handler.functionName} [${handler.deploymentType}]`
