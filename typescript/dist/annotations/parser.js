@@ -117,7 +117,7 @@ class Parser {
             if (functionMatch) {
                 const functionName = functionMatch[1] || functionMatch[2];
                 // Look backwards for annotations
-                const annotations = this.extractAnnotationsAbove(lines, i);
+                const annotations = this.extractAnnotations(lines, i);
                 if (annotations.deploymentType) {
                     const handler = this.buildHandler(functionName, filePath, annotations, i + 1);
                     if (handler) {
@@ -131,7 +131,7 @@ class Parser {
     /**
      * Extract annotations from comments above a function
      */
-    extractAnnotationsAbove(lines, functionLineIndex) {
+    extractAnnotations(lines, functionLineIndex) {
         const annotations = {};
         // Look backwards from function line
         for (let i = functionLineIndex - 1; i >= 0; i--) {

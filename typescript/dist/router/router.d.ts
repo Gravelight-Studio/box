@@ -1,5 +1,4 @@
-import { Express, RequestHandler, Request as ExpressRequest, Response as ExpressResponse } from 'express';
-import { Handler } from '../annotations';
+import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 /**
  * HTTP Request type (re-exported from Express for convenience)
  */
@@ -21,49 +20,24 @@ export interface Logger {
  * Router configuration
  */
 export interface RouterConfig {
-    handlersDir: string;
-    logger: Logger;
-}
-/**
- * Handler registry for storing handler implementations
- */
-export declare class HandlerRegistry {
-    private logger;
-    private handlers;
-    constructor(logger: Logger);
-    /**
-     * Register a handler implementation
-     */
-    register(packageName: string, functionName: string, handler: RequestHandler): void;
-    /**
-     * Get a handler implementation
-     */
-    get(packageName: string, functionName: string): RequestHandler | undefined;
+    handlersDirs: string[];
+    logger?: Logger;
 }
 /**
  * Box router with annotation-driven route registration
  */
 export declare class BoxRouter {
     private app;
-    private handlers;
     private config;
     constructor(config: RouterConfig);
     /**
-     * Initialize router by parsing annotations
+     * Initialize router by parsing annotations and registering handlers
      */
     initialize(): Promise<void>;
     /**
-     * Register all handlers with their middleware
-     */
-    registerHandlers(registry: HandlerRegistry): void;
-    /**
-     * Get all registered handlers
-     */
-    getHandlers(): Handler[];
-    /**
      * Get the Express app
      */
-    getApp(): Express;
+    listen(port: string | number, callback?: () => void): void;
 }
 /**
  * Create a Box router

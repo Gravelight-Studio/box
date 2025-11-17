@@ -1,44 +1,22 @@
-import { BoxRouter, HandlerRegistry } from '@gravelight-studio/box';
-import pino from 'pino';
-import * as handlers from '../handlers/health';
-
-const logger = pino({
-  transport: {
-    target: 'pino-pretty',
-    options: {
-      colorize: true,
-      ignore: 'pid,hostname'
-    }
-  }
-});
+import { BoxRouter } from '@gravelight-studio/box';
 
 async function main() {
   try {
-    // Create router
+    // Create and initialize router
     const router = new BoxRouter({
-      handlersDir: './handlers',
-      logger
+      handlersDirs: ['./handlers', './containers']
     });
 
     await router.initialize();
 
-    // Create registry and register handlers
-    const registry = new HandlerRegistry(logger);
-    registry.register('health', 'getHealth', handlers.getHealth);
-    registry.register('health', 'getHello', handlers.getHello);
-
-    // Register all handlers with router
-    router.registerHandlers(registry);
-
-    // Get Express app and start server
-    const app = router.getApp();
+    // Start server
     const port = process.env.PORT || 8080;
-
-    app.listen(port, () => {
-      logger.info(`Server listening on port ${port}`);
+    router.listen(port, () => {
+      // You can use this callback to trigger any post-startup logic
+      // Box will output the server details to the console
     });
   } catch (error) {
-    logger.error('Failed to start server', { error });
+    console.error('Failed to start server:', error);
     process.exit(1);
   }
 }

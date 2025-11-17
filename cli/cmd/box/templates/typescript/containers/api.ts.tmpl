@@ -1,0 +1,49 @@
+import { Request, Response } from '@gravelight-studio/box';
+
+interface UserResponse {
+  id: string;
+  name: string;
+  email: string;
+}
+
+// @box:container
+// @box:path GET /api/users/{id}
+// @box:auth optional
+export const getUser = (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  // Example user data - in a real app, this would come from a database
+  const user: UserResponse = {
+    id,
+    name: 'John Doe',
+    email: 'john.doe@example.com'
+  };
+
+  res.status(200).json(user);
+};
+
+// @box:container
+// @box:path POST /api/users
+// @box:auth required
+export const createUser = (req: Request, res: Response) => {
+  const { name, email } = req.body;
+
+  // Example creation - in a real app, this would save to a database
+  const newUser: UserResponse = {
+    id: Math.random().toString(36).substring(7),
+    name,
+    email
+  };
+
+  res.status(201).json(newUser);
+};
+
+// @box:container
+// @box:path DELETE /api/users/{id}
+// @box:auth required
+export const deleteUser = (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  // Example deletion - in a real app, this would delete from a database
+  res.status(204).send();
+};

@@ -22,7 +22,7 @@ export declare class Parser {
     /**
      * Extract annotations from comments above a function
      */
-    private extractAnnotationsAbove;
+    private extractAnnotations;
     /**
      * Parse individual annotation
      */

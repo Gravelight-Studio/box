@@ -1,5 +1,7 @@
+import { resolve } from 'node:path';
+import pino from 'pino';
 import express, { Express, RequestHandler, Request as ExpressRequest, Response as ExpressResponse } from 'express';
-import { Handler, Parser, AuthType } from '../annotations';
+import { Parser, AuthType } from '../annotations';
 import {
   createCORSMiddleware,
   createAuthMiddleware,
@@ -33,34 +35,8 @@ export interface Logger {
  * Router configuration
  */
 export interface RouterConfig {
-  handlersDir: string;
-  logger: Logger;
-}
-
-/**
- * Handler registry for storing handler implementations
- */
-export class HandlerRegistry {
-  private handlers: Map<string, RequestHandler> = new Map();
-
-  constructor(private logger: Logger) {}
-
-  /**
-   * Register a handler implementation
-   */
-  register(packageName: string, functionName: string, handler: RequestHandler): void {
-    const key = `${packageName}.${functionName}`;
-    this.handlers.set(key, handler);
-    this.logger.debug(`Registered handler: ${key}`);
-  }
-
-  /**
-   * Get a handler implementation
-   */
-  get(packageName: string, functionName: string): RequestHandler | undefined {
-    const key = `${packageName}.${functionName}`;
-    return this.handlers.get(key);
-  }
+  handlersDirs: string[];
+  logger?: Logger
 }
 
 /**
@@ -68,12 +44,22 @@ export class HandlerRegistry {
  */
 export class BoxRouter {
   private app: Express;
-  private handlers: Handler[] = [];
-  private config: RouterConfig;
+  private config: Required<RouterConfig>;
 
   constructor(config: RouterConfig) {
-    this.config = config;
+    
+    const logger = config.logger ?? pino({
+      transport: {
+        target: 'pino-pretty',
+        options: {
+          colorize: true,
+          ignore: 'pid,hostname'
+        }
+      }
+    });
+
     this.app = express();
+    this.config = {...config, logger};
 
     // Add body parsing middleware
     this.app.use(express.json());
@@ -81,33 +67,35 @@ export class BoxRouter {
   }
 
   /**
-   * Initialize router by parsing annotations
+   * Initialize router by parsing annotations and registering handlers
    */
   async initialize(): Promise<void> {
     const parser = new Parser();
-    const result = await parser.parseDirectory(this.config.handlersDir);
+    const {errors, handlers} = (await Promise.all(
+      this.config.handlersDirs.map(handlerDir => parser.parseDirectory(handlerDir))
+    )).reduce((final, parsedAnnotations) => {
+      return {
+        errors: [...final.errors, ...parsedAnnotations.errors],
+        handlers: [...final.handlers, ...parsedAnnotations.handlers]
+      }
+    });
 
-    if (result.errors.length > 0) {
-      this.config.logger.warn(`Found ${result.errors.length} parse errors`);
-      for (const error of result.errors) {
+    if (errors.length > 0) {
+      this.config.logger.warn(`Found ${errors.length} parse errors`);
+      for (const error of errors) {
         this.config.logger.warn(`Parse error in ${error.filePath}:${error.lineNumber} - ${error.message}`);
       }
     }
 
-    this.handlers = result.handlers;
-    this.config.logger.info(`Parsed ${this.handlers.length} handlers from ${this.config.handlersDir}`);
-  }
+    this.config.logger.info(`Parsed ${handlers.length} handlers from ${this.config.handlersDirs.join(',')}`);
 
-  /**
-   * Register all handlers with their middleware
-   */
-  registerHandlers(registry: HandlerRegistry): void {
-    for (const handler of this.handlers) {
-      const handlerFn = registry.get(handler.packageName, handler.functionName);
+    // Register all provided handler implementations
+    for (const handler of handlers) {
+      const handlerFn = require(resolve(handler.filePath))[handler.functionName]
 
       if (!handlerFn) {
         this.config.logger.warn(
-          `Handler not found in registry: ${handler.packageName}.${handler.functionName}`
+          `Handler not found: ${handler.packageName}.${handler.functionName}`
         );
         continue;
       }
@@ -153,17 +141,13 @@ export class BoxRouter {
   }
 
   /**
-   * Get all registered handlers
-   */
-  getHandlers(): Handler[] {
-    return this.handlers;
-  }
-
-  /**
    * Get the Express app
    */
-  getApp(): Express {
-    return this.app;
+  listen(port: string | number, callback?: () => void): void {
+    this.app.listen(port, () => {
+      this.config.logger.info(`Server listening on port ${port}`);
+      if (callback) callback();
+    });
   }
 }
 
