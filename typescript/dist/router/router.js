@@ -106,7 +106,6 @@ class BoxRouter {
             this.config.logger.info(`Server listening on port ${port}`);
             if (callback)
                 callback();
-            console.log(this.app.routes);
         });
     }
 }

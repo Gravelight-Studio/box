@@ -37,6 +37,7 @@ go/coverage.html
 # Node (future)
 node_modules/
 *.tgz
+.npmrc
 
 # Python (future)
 __pycache__/

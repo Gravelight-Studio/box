@@ -1,9 +1,17 @@
 {
-  "name": "@gravelight-studio/box",
-  "version": "0.1.9",
+  "name": "@gravelight/box",
+  "version": "0.2.0",
   "description": "Annotation-driven API framework with hybrid cloud deployment",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
@@ -13,7 +21,9 @@
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
     "sync-version": "node scripts/sync-version.js",
-    "prepublishOnly": "npm run sync-version && npm run build"
+    "prepublishOnly": "npm run sync-version && npm run build",
+    "publish:package": "npm publish",
+    "publish:dry-run": "npm publish --dry-run"
   },
   "keywords": [
     "api",
@@ -31,7 +41,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/gravelight-studio/box.git",
+    "url": "git+https://github.com/gravelight-studio/box.git",
     "directory": "typescript"
   },
   "bugs": {
